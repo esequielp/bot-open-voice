@@ -47,7 +47,6 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 const ASSISTANT_ID_AGENDA = process.env?.ASSISTANT_ID_AGENDA ?? ''
 
-
 interface DistanceMatrixResponse {
     status: string;
     rows: Array<{
