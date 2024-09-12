@@ -1,0 +1,53 @@
+name: Build, Push, and Deploy bot-open-voice Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-docker-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.SECRET_TOKEN }}
+
+      - name: Build and push bot-open-voice Docker image
+        run: |
+          docker build -t ghcr.io/esequielp/bot-open-voice:latest .
+          docker push ghcr.io/esequielp/bot-open-voice:latest
+
+  deploy:
+    needs: create-docker-image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: SSH into Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          # Configurar la clave privada SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 62.72.11.33 >> ~/.ssh/known_hosts
+
+          # Conectarse al servidor y desplegar la aplicación
+          ssh root@62.72.11.33 << 'EOF'
+            cd /home/chatbot/clientes/bot-test
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.SECRET_TOKEN }}
+            docker pull ghcr.io/esequielp/bot-open-voice:latest
+            docker stop bot-open-voice || true
+            docker rm bot-open-voice || true
+            docker run -d --name bot-open-voice --env-file .env -p 127.0.0.1:3011:3011 ghcr.io/esequielp/bot-open-voice:latest
+          EOF

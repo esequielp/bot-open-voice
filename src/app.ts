@@ -3,7 +3,7 @@ import { MemoryDB as Database } from '@builderbot/bot'
 import { BaileysProvider as Provider } from '@builderbot/provider-baileys'
 import { generateAudio } from './openai'
 
-const PORT = process.env.PORT ?? 3008
+const PORT = process.env.PORT ?? 3011
 
 const welcomeFlow = addKeyword<Provider, Database>(['hi', 'hello', 'hola'])
     .addAnswer(`te voy enviar audio...`)
