@@ -1,4 +1,4 @@
-name: Build, Push, and Deploy bot-open-voice Docker Image
+name: Build, Push, and Deploy ia-sales-ilpesto-chatbot Docker Image
 
 on:
   push:
@@ -10,20 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Actualización de actions/checkout a v3
       - name: Checkout the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
+      # Actualización de docker/login-action a v2
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.SECRET_TOKEN }}
 
-      - name: Build and push bot-open-voice Docker image
+      # Construir y subir la imagen Docker
+      - name: Build and push ia-sales-ilpesto-chatbot Docker image
         run: |
-          docker build -t ghcr.io/esequielp/bot-open-voice:latest .
-          docker push ghcr.io/esequielp/bot-open-voice:latest
+          docker build -t ghcr.io/esequielp/ia-sales-ilpesto-chatbot:latest .
+          docker push ghcr.io/esequielp/ia-sales-ilpesto-chatbot:latest
 
   deploy:
     needs: create-docker-image
@@ -32,6 +35,8 @@ jobs:
     steps:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
+
+      # Conexión SSH y despliegue en el servidor
       - name: SSH into Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -41,13 +46,12 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 62.72.11.33 >> ~/.ssh/known_hosts
-
           # Conectarse al servidor y desplegar la aplicación
           ssh root@62.72.11.33 << 'EOF'
-            cd /home/chatbot/clientes/bot-test
+            cd /home/chatbot/clientes/ilpesto
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.SECRET_TOKEN }}
-            docker pull ghcr.io/esequielp/bot-open-voice:latest
-            docker stop bot-open-voice || true
-            docker rm bot-open-voice || true
-            docker run -d --name bot-open-voice --env-file .env -p 127.0.0.1:3011:3011 ghcr.io/esequielp/bot-open-voice:latest
+            docker pull ghcr.io/esequielp/ia-sales-ilpesto-chatbot:latest
+            docker stop ia-sales-ilpesto-chatbot || true
+            docker rm ia-sales-ilpesto-chatbot || true
+            docker run -d --name ia-sales-ilpesto-chatbot --env-file .env -v /home/chatbot/clientes/ilpesto/tmp:/app/tmp -p 127.0.0.1:3009:3009 ghcr.io/esequielp/ia-sales-ilpesto-chatbot:latest
           EOF
