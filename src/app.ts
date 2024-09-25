@@ -6,7 +6,6 @@ import { typing, recording } from "./utils/presence"
 import { join } from 'path'
 
 const PORT = process.env.PORT ?? 3009
-
 const welcomeFlow = addKeyword<Provider, Database>(['hi', 'hello', 'hola'])
     .addAnswer(`te voy enviar audio...`)
     .addAction(async (ctx, { flowDynamic }) => {
